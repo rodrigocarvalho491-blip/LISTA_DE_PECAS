@@ -61,6 +61,22 @@ with col_titulo:
 
 st.divider()
 
+# --- GUIA RÁPIDO DE EQUIVALÊNCIAS DE MEDIDAS ---
+with st.expander("💡 **Guia Rápido de Equivalência de Medidas (Multicamada x Aço x Cobre)**"):
+    st.markdown("""
+    | Tubo Multicamada | Tubo de Aço (Rosca BSP) | Tubo de Cobre |
+    | :---: | :---: | :---: |
+    | **16 mm** | 3/8" | 15 mm |
+    | **20 mm** | 1/2" | 22 mm |
+    | **26 mm** | 3/4" | 28 mm |
+    | **32 mm** | 1" | 35 mm |
+    | **40 mm** | 1.1/4" | 42 mm |
+    | **50 mm** | 1.5" | 54 mm |
+    | **63 mm** | 2" | 66 mm |
+    """)
+
+st.divider()
+
 # --- DADOS DO CLIENTE ---
 st.subheader("1. Dados do Cliente (Opcional)")
 col1, col2, col3 = st.columns(3)
@@ -125,7 +141,6 @@ def normalize_text(text):
     text = re.sub(r'[óòõôö]', 'o', text)
     text = re.sub(r'[úùûü]', 'u', text)
     text = re.sub(r'[ç]', 'c', text)
-    # Preserva barras, aspas (polegadas) e hífens
     text = re.sub(r'[^a-z0-9\s/"]', ' ', text)
     return " ".join(text.split())
 
@@ -214,17 +229,15 @@ def match_catalog_item(user_item_str, catalog):
         elif "uniao" in norm_user and code == "PI6673":
             score += 200
 
-        # Pontuação generalizada considerando especificações de medidas no catálogo
         user_words = set(norm_user.split())
         desc_words = set(norm_desc.split())
         common = user_words.intersection(desc_words)
         
-        # Bônus para acertos diretos de frações de polegadas e milímetros
         for w in user_words:
             if w in desc_words:
                 score += 5
                 if "/" in w or "mm" in w or w.isdigit():
-                    score += 25  # Bônus de especificação técnica/medida
+                    score += 25
 
         scores.append((score, cat))
         
