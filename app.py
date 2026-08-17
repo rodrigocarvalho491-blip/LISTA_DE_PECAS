@@ -106,7 +106,7 @@ texto_solicitacao = st.text_area(
     "Digite, cole ou dite os itens aqui:",
     value=texto_ditado if texto_ditado else "",
     height=150,
-    placeholder="Ex: 25m tubo multi 20mm, 25 suportes tubo multi 20mm, 01 conector multi 20mm x 1/2\" macho",
+    placeholder="Ex: 25m tubo multi 20mm, 25 suportes tubo multi 20mm, 02 niple 3/4\" x 1/2\"",
 )
 
 formato = st.radio(
@@ -125,6 +125,7 @@ def normalize_text(text):
     text = re.sub(r'[óòõôö]', 'o', text)
     text = re.sub(r'[úùûü]', 'u', text)
     text = re.sub(r'[ç]', 'c', text)
+    # Preserva aspas (medidas em polegadas) e barras
     text = re.sub(r'[^a-z0-9\s/"]', ' ', text)
     return " ".join(text.split())
 
@@ -138,18 +139,27 @@ def match_catalog_item(user_item_str, catalog):
         norm_desc = normalize_text(desc)
         score = 0
         
-        if "suporte" in norm_user and "20" in norm_user and code == "PI3569":
+        # --- NIPLES ---
+        if "niple" in norm_user and "3/4" in norm_user and "1/2" in norm_user and code == "PI1370":
+            score += 300
+        elif "niple" in norm_user and "1/2" in norm_user and "3/4" not in norm_user and code == "PI1230":
+            score += 200
+
+        # --- SUPORTES ---
+        elif "suporte" in norm_user and "20" in norm_user and code == "PI3569":
             score += 200
         elif "suporte" in norm_user and "26" in norm_user and code == "PI3571":
             score += 200
         elif "suporte" in norm_user and ("l" in norm_user or "15" in norm_user) and code == "PI5510":
             score += 200
             
+        # --- CONECTORES ---
         elif "conector" in norm_user and "macho" in norm_user and code == "PI3651":
             score += 200
         elif "conector" in norm_user and "femea" in norm_user and code == "PI3644":
             score += 200
             
+        # --- COTOVELOS ---
         elif "cotovelo" in norm_user and "femea" in norm_user and code == "PI3574":
             score += 200
         elif "cotovelo" in norm_user and "20" in norm_user and code == "PI3545":
@@ -161,6 +171,7 @@ def match_catalog_item(user_item_str, catalog):
         elif "cotovelo" in norm_user and "1 1/2" in norm_user and code == "PI3001":
             score += 200
             
+        # --- TUBOS ---
         elif "tubo" in norm_user and "20" in norm_user and "multi" in norm_user and code == "PI3668":
             score += 200
         elif "tubo" in norm_user and "26" in norm_user and "multi" in norm_user and code == "PI3669":
@@ -170,6 +181,7 @@ def match_catalog_item(user_item_str, catalog):
         elif "tubo" in norm_user and "aco" in norm_user and code == "PI0010":
             score += 200
             
+        # --- TÊS ---
         elif ("te" in norm_user or " t " in f" {norm_user} ") and "20" in norm_user and code == "PI3549":
             score += 200
         elif ("te" in norm_user or " t " in f" {norm_user} ") and "26" in norm_user and code == "PI3551":
@@ -177,12 +189,10 @@ def match_catalog_item(user_item_str, catalog):
         elif ("te" in norm_user or " t " in f" {norm_user} ") and code == "PI0990":
             score += 200
             
+        # --- LUVAS E OUTROS ---
         elif "luva" in norm_user and "26" in norm_user and code == "PI3593":
             score += 200
         elif "luva" in norm_user and "1 1/2" in norm_user and code == "PI1461":
-            score += 200
-            
-        elif "niple" in norm_user and code == "PI1230":
             score += 200
         elif ("valvula" in norm_user or "esferica" in norm_user) and code == "PI2190":
             score += 200
@@ -191,6 +201,7 @@ def match_catalog_item(user_item_str, catalog):
         elif "uniao" in norm_user and code == "PI6673":
             score += 200
             
+        # Matching genérico de palavras
         user_words = set(norm_user.split())
         desc_words = set(norm_desc.split())
         common = user_words.intersection(desc_words)
