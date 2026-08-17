@@ -6,6 +6,8 @@ import io
 import datetime
 import re
 import os
+from streamlit_mic_recorder import mic_recorder
+import speech_recognition as sr
 
 # 1. Configuração da página
 st.set_page_config(page_title="Gerador de Lista de Peças", page_icon="📦", layout="wide")
@@ -77,8 +79,32 @@ st.divider()
 
 # --- ENTRADA DA LISTA DE PEÇAS ---
 st.subheader("2. Lista de Peças")
+
+col_mic, col_info = st.columns([1, 4])
+
+with col_mic:
+    audio = mic_recorder(
+        start_prompt="🎙️ Gravar Voz",
+        stop_prompt="⏹️ Finalizar",
+        key='recorder'
+    )
+
+texto_ditado = ""
+
+if audio and 'bytes' in audio:
+    r = sr.Recognizer()
+    audio_file = io.BytesIO(audio['bytes'])
+    with sr.AudioFile(audio_file) as source:
+        audio_data = r.record(source)
+        try:
+            texto_ditado = r.recognize_google(audio_data, language="pt-BR")
+            st.success(f"🗣️ Reconhecido: **{texto_ditado}**")
+        except Exception:
+            st.error("❌ Não foi possível reconhecer o áudio. Tente falar novamente.")
+
 texto_solicitacao = st.text_area(
-    "Digite ou cole os itens aqui:",
+    "Digite, cole ou dite os itens aqui:",
+    value=texto_ditado if texto_ditado else "",
     height=150,
     placeholder="Ex: 25m tubo multi 20mm, 25 suportes tubo multi 20mm, 01 conector multi 20mm x 1/2\" macho",
 )
@@ -260,7 +286,6 @@ if st.button("🚀 Processar Solicitação"):
                 
                 fonte_cabecalho = Font(name="Calibri", size=18, bold=True)
                 
-                # Ajuste exato conforme posições das linhas 4 e 5
                 if data_hoje:
                     ws["A4"] = f" Data: {data_hoje}"
                     ws["A4"].font = fonte_cabecalho
